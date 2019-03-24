@@ -14,5 +14,12 @@ module.exports = {
             [kb.getFilmButtons().action, kb.getFilmButtons().comedy],
             [kb.getBackButton()]
         ];
+    },
+
+    getCinemaLayout() {
+        return [
+            [kb.getCinemaButton()],
+            [kb.getBackButton()]
+        ];
     }
 };

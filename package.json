@@ -1,0 +1,19 @@
+{
+  "name": "kino-bot",
+  "version": "1.0.0",
+  "description": "The bot for searching films and cinemas.",
+  "main": "index.js",
+  "author": "Danil Sagaydak",
+  "license": "MIT",
+  "private": true,
+  "scripts": {
+    "start": "node ./src/index.js",
+    "dev": "nodemon ./src/index.js"
+  },
+  "dependencies": {
+    "node-telegram-bot-api": "^0.30.0"
+  },
+  "devDependencies": {
+    "nodemon": "^1.18.10"
+  }
+}

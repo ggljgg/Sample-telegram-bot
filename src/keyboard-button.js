@@ -15,6 +15,13 @@ module.exports = {
         };
     },
     
+    getCinemaButton() {
+        return {
+            text: 'Отправить местоположение',
+            request_location: true
+        };
+    },
+
     getBackButton() {
         return 'Назад';
     }

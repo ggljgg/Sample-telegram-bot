@@ -11,6 +11,7 @@
     "dev": "nodemon ./src/index.js"
   },
   "dependencies": {
+    "mongoose": "^5.4.19",
     "node-telegram-bot-api": "^0.30.0"
   },
   "devDependencies": {

@@ -1,25 +1,24 @@
 const kb = require('./keyboard-button');
 
 module.exports = {
-    getHomeLayout() {
-        return [
-            [kb.getHomeButtons().films, kb.getHomeButtons().cinemas],
-            [kb.getHomeButtons().favourite]
-        ];
-    },
-
-    getFilmLayout() {
-        return [
-            [kb.getFilmButtons().random],
-            [kb.getFilmButtons().action, kb.getFilmButtons().comedy],
-            [kb.getBackButton()]
-        ];
-    },
-
-    getCinemaLayout() {
-        return [
-            [kb.getCinemaButton()],
-            [kb.getBackButton()]
-        ];
+    getKeyboardLayout(keyboardType) {  
+        switch(keyboardType) {
+            case 'home':
+                return [
+                    [kb.getButton('films'), kb.getButton('cinemas')],
+                    [kb.getButton('favourite')]
+                ];
+            case 'films':
+                return [
+                    [kb.getButton('random')],
+                    [kb.getButton('action'), kb.getButton('comedy')],
+                    [kb.getButton('back')]
+                ];
+            case 'cinema':
+                return [
+                    [kb.getButton('location')],
+                    [kb.getButton('back')]
+                ];
+        }
     }
 };

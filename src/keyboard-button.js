@@ -1,28 +1,25 @@
 module.exports = {
-    getHomeButtons() {
-        return {
-            films: 'Сейчас в кино',
-            favourite: 'Избранное',
-            cinemas: 'Кинотеатры'
-        };
-    },
-
-    getFilmButtons() {
-        return {
-            random: 'Случайный жанр',
-            action: 'Боевик',
-            comedy: 'Комедия'
-        };
-    },
-    
-    getCinemaButton() {
-        return {
-            text: 'Отправить местоположение',
-            request_location: true
-        };
-    },
-
-    getBackButton() {
-        return 'Назад';
+    getButton(button) {
+        switch(button) {
+            case 'films':
+                return 'Сейчас в кино';
+            case 'favourite':
+                return 'Избранное'
+            case 'cinemas':
+                return 'Кинотеатры';
+            case 'random':
+                return 'Случайный жанр';
+            case 'action':
+                return 'Боевик';
+            case 'comedy':
+                return 'Комедия';
+            case 'location':
+                return {
+                    text: 'Отправить местоположение',
+                    request_location: true
+                };
+            case 'back':
+                return 'Назад';
+        }
     }
 }

@@ -11,6 +11,8 @@
     "dev": "nodemon ./src/index.js"
   },
   "dependencies": {
+    "geolib": "^2.0.24",
+    "lodash": "^4.17.11",
     "mongoose": "^5.4.19",
     "node-telegram-bot-api": "^0.30.0"
   },

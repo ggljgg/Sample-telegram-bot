@@ -2,7 +2,7 @@ const keyboard = require('./keyboard-layout');
 const Film = require('./models').Film;
 const Cinema = require('./models').Cinema;
 const geolib = require('geolib');
-const _ = require('lodash');
+const lodash = require('lodash');
 
 function sendHTML(bot, chatId, html, keyboardType=null) {
     let options = {
@@ -38,7 +38,7 @@ module.exports = {
     sendFilmsByQuery(bot, chatId, query) {
         Film.find(query).then(films => {
             let html = films.map((f, i) => {
-                return f.name
+                return `${i + 1}) Название: <b>"${f.name}"</b>\n    Рейтинг фильма: <b>${f.rate}</b>\n    <i>Подробнее =></i> /${f.uuid}`
             }).join('\n');
     
             sendHTML(bot, chatId, html, 'film');
@@ -51,13 +51,19 @@ module.exports = {
                 c.distance = geolib.getDistance(location, c.location) / 1000;
             });
             
-            cinemas = _.sortBy(cinemas, 'distance');
+            cinemas = lodash.sortBy(cinemas, 'distance');
     
             let html = cinemas.map((c, i) => {
-                return `${c.name} - ${c.distance} км`
+                return `${i + 1}) Название: <b>"${c.name}"</b>\n    Расстояние до кинотеатра: <b>${c.distance} км</b>\n    <i>Подробнее =></i> /${c.uuid}`
             }).join('\n');
             
             sendHTML(bot, chatId, html, 'home');
         });
-    }
+    },
+
+    getItemUuid(source) {
+        return source.slice(1);
+    },
+
+    sendHTML: sendHTML
 };

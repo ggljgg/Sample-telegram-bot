@@ -2,24 +2,24 @@ module.exports = {
     getButton(button) {
         switch(button) {
             case 'films':
-                return 'Сейчас в кино';
+                return '🎬 Сейчас в кино';
             case 'favourite':
-                return 'Избранное'
+                return '🌟 Избранное'
             case 'cinemas':
-                return 'Кинотеатры';
-            case 'random':
-                return 'Случайный жанр';
+                return '🎥 Кинотеатры';
+            case 'all':
+                return 'Все жанры';
             case 'action':
                 return 'Боевик';
             case 'comedy':
                 return 'Комедия';
             case 'location':
                 return {
-                    text: 'Отправить местоположение',
+                    text: '🌐 Отправить местоположение',
                     request_location: true
                 };
             case 'back':
-                return 'Назад';
+                return '⬅️ Назад';
         }
     }
 }

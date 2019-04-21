@@ -10,7 +10,7 @@ module.exports = {
                 ];
             case 'films':
                 return [
-                    [kb.getButton('random')],
+                    [kb.getButton('all')],
                     [kb.getButton('action'), kb.getButton('comedy')],
                     [kb.getButton('back')]
                 ];

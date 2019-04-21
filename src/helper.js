@@ -65,7 +65,7 @@ module.exports = {
     },
 
     sendFilmsByQuery(bot, chatId, query) {
-        Film.paginate(query, { limit:  2})
+        Film.paginate(query, { limit:  1})
             .then(result => {
                 // this.logInConsole(result)
                 if(result.docs.length) {
@@ -79,14 +79,14 @@ module.exports = {
                         reply_markup: {
                             inline_keyboard: [
                                 [
-                                    {
-                                        text: 'Назад',
-                                        callback_data: JSON.stringify({
-                                            type: 'prev',
-                                            hasPrevPage: result.hasPrevPage,
-                                            prevPage: result.prevPage
-                                        })
-                                    },
+                                    // {
+                                    //     text: 'Назад',
+                                    //     callback_data: JSON.stringify({
+                                    //         type: 'prev',
+                                    //         hasPrevPage: result.hasPrevPage,
+                                    //         prevPage: result.prevPage
+                                    //     })
+                                    // },
                                     {
                                         text: 'Далее',
                                         callback_data: JSON.stringify({

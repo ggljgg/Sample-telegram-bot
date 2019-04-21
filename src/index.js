@@ -182,6 +182,7 @@ bot.on('callback_query', query => {
     let data = JSON.parse(query.data);
     let { type, latitude, longitude } = data;
 
+    let inline_keyboard_layout = []; // временная переменная, пока не сделаю рефакторинг
     switch(type) {
         case ACTION_TYPE.SHOW_CINEMAS_ON_MAP:
             bot.sendLocation(query.from.id, latitude, longitude);
@@ -197,95 +198,127 @@ bot.on('callback_query', query => {
             break;
         case ACTION_TYPE.NEXT_PAGE:
             // helper.logInConsole(data);
-            
-            if (data.hasNextPage) {
-                Film.paginate({}, { limit: 2, page: data.nextPage})
-                    .then(result => {
-                        // helper.logInConsole(result);
 
-                        if(result.docs.length) {
-                            let html = result.docs.map(f => {
-                                return `Название: <b>"${f.name}"</b>\nРейтинг фильма: <b>${f.rate}</b>\n<i>О фильме:</i> /${f.uuid}`
-                            }).join('\n\n');
-                            
-                            // helper.logInConsole(html);
+            Film.paginate({}, { limit: 1, page: data.nextPage})
+                .then(result => {
+                    // helper.logInConsole(result);
 
-                            bot.editMessageText(html, {
-                                parse_mode: 'HTML',
-                                chat_id: query.message.chat.id,
-                                message_id: query.message.message_id,
-                                reply_markup: { 
-                                    inline_keyboard: [
-                                        [
-                                            {
-                                                text: 'Назад',
-                                                callback_data: JSON.stringify({
-                                                    type: 'prev',
-                                                    hasPrevPage: result.hasPrevPage,
-                                                    prevPage: result.prevPage
-                                                })
-                                            },
-                                            {
-                                                text: 'Далее',
-                                                callback_data: JSON.stringify({
-                                                    type: 'next',
-                                                    hasNextPage: result.hasNextPage,
-                                                    nextPage: result.nextPage
-                                                })
-                                            }
-                                        ]
-                                    ]
-                                }
-                            });
+                    if(result.docs.length) {
+                        let html = result.docs.map(f => {
+                            return `Название: <b>"${f.name}"</b>\nРейтинг фильма: <b>${f.rate}</b>\n<i>О фильме:</i> /${f.uuid}`
+                        }).join('\n\n');
+                        
+                        // helper.logInConsole(html);
+
+                        if (result.hasNextPage) {
+                            inline_keyboard_layout = [
+                                [
+                                    {
+                                        text: 'Назад',
+                                        callback_data: JSON.stringify({
+                                            type: ACTION_TYPE.PREV_PAGE,
+                                            // hasPrevPage: result.hasPrevPage,
+                                            prevPage: result.prevPage
+                                        })
+                                    },
+                                    {
+                                        text: 'Далее',
+                                        callback_data: JSON.stringify({
+                                            type: ACTION_TYPE.NEXT_PAGE,
+                                            // hasNextPage: result.hasNextPage,
+                                            nextPage: result.nextPage
+                                        })
+                                    }
+                                ]
+                            ];
                         }
-                    });
-            }
+                        else {
+                            inline_keyboard_layout = [
+                                [
+                                    {
+                                        text: 'Назад',
+                                        callback_data: JSON.stringify({
+                                            type: ACTION_TYPE.PREV_PAGE,
+                                            // hasPrevPage: result.hasPrevPage,
+                                            prevPage: result.prevPage
+                                        })
+                                    }
+                                ]
+                            ]
+                        }
+
+                        bot.editMessageText(html, {
+                            parse_mode: 'HTML',
+                            chat_id: query.message.chat.id,
+                            message_id: query.message.message_id,
+                            reply_markup: { 
+                                inline_keyboard: inline_keyboard_layout
+                            }
+                        });
+                    }
+                });
             break;
         case ACTION_TYPE.PREV_PAGE:
             // helper.logInConsole(data);
-        
-            if (data.hasPrevPage) {
-                Film.paginate({}, { limit: 2, page: data.prevPage})
-                    .then(result => {
-                        // helper.logInConsole(result);
+            
+            Film.paginate({}, { limit: 1, page: data.prevPage})
+                .then(result => {
+                    // helper.logInConsole(result);
 
-                        if(result.docs.length) {
-                            let html = result.docs.map(f => {
-                                return `Название: <b>"${f.name}"</b>\nРейтинг фильма: <b>${f.rate}</b>\n<i>О фильме:</i> /${f.uuid}`
-                            }).join('\n\n');
-                            
-                            // helper.logInConsole(html);
+                    if(result.docs.length) {
+                        let html = result.docs.map(f => {
+                            return `Название: <b>"${f.name}"</b>\nРейтинг фильма: <b>${f.rate}</b>\n<i>О фильме:</i> /${f.uuid}`
+                        }).join('\n\n');
+                        
+                        // helper.logInConsole(html);
 
-                            bot.editMessageText(html, {
-                                parse_mode: 'HTML',
-                                chat_id: query.message.chat.id,
-                                message_id: query.message.message_id,
-                                reply_markup: { 
-                                    inline_keyboard: [
-                                        [
-                                            {
-                                                text: 'Назад',
-                                                callback_data: JSON.stringify({
-                                                    type: 'prev',
-                                                    hasPrevPage: result.hasPrevPage,
-                                                    prevPage: result.prevPage
-                                                })
-                                            },
-                                            {
-                                                text: 'Далее',
-                                                callback_data: JSON.stringify({
-                                                    type: 'next',
-                                                    hasNextPage: result.hasNextPage,
-                                                    nextPage: result.nextPage
-                                                })
-                                            }
-                                        ]
-                                    ]
-                                }
-                            });
+                        if (result.hasPrevPage) {
+                            inline_keyboard_layout = [
+                                [
+                                    {
+                                        text: 'Назад',
+                                        callback_data: JSON.stringify({
+                                            type: ACTION_TYPE.PREV_PAGE,
+                                            // hasPrevPage: result.hasPrevPage,
+                                            prevPage: result.prevPage
+                                        })
+                                    },
+                                    {
+                                        text: 'Далее',
+                                        callback_data: JSON.stringify({
+                                            type: ACTION_TYPE.NEXT_PAGE,
+                                            // hasNextPage: result.hasNextPage,
+                                            nextPage: result.nextPage
+                                        })
+                                    }
+                                ]
+                            ];
                         }
-                    });
-            }
+                        else {
+                            inline_keyboard_layout = [
+                                [
+                                    {
+                                        text: 'Далее',
+                                        callback_data: JSON.stringify({
+                                            type: ACTION_TYPE.NEXT_PAGE,
+                                            // hasNextPage: result.hasNextPage,
+                                            nextPage: result.nextPage
+                                        })
+                                    }
+                                ]
+                            ]
+                        }
+
+                        bot.editMessageText(html, {
+                            parse_mode: 'HTML',
+                            chat_id: query.message.chat.id,
+                            message_id: query.message.message_id,
+                            reply_markup: { 
+                                inline_keyboard: inline_keyboard_layout
+                            }
+                        });
+                    }
+                });
             break;
     }   
 });

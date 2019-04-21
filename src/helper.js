@@ -1,18 +1,45 @@
 const keyboard = require('./keyboard-layout');
-const Film = require('./models').Film;
-const Cinema = require('./models').Cinema;
+const database = require('../database.json');
+const mongoose = require('mongoose');
+const Film = require('./models/film');
+const Cinema = require('./models/cinema');
+const User = require('./models/user');
 const geolib = require('geolib');
 const lodash = require('lodash');
 
-function sendHTML(bot, chatId, html, keyboardType=null) {
+function sendHTML(bot, chatId, html, /*keyboardType='keyboard',*/ keyboardLayout=null) {
     let options = {
         parse_mode: 'HTML'
     };
     
-    if (keyboardType) {
+    if (keyboardLayout) {
         options['reply_markup'] = {
-            keyboard: keyboard.getKeyboardLayout(keyboardType)
+            keyboard: keyboard.getKeyboardLayout(keyboardLayout),
+            resize_keyboard: true   // поставил зашлушку, потому что где-то в процессе кнопки увеличились
         };
+        /*switch(keyboardType) {
+            case 'keyboard':
+                options['reply_markup'] = {
+                    keyboard: keyboard.getKeyboardLayout(keyboardLayout)
+                };
+                break;
+            case 'inline_keyboard':
+                options['reply_markup'] = {
+                    inline_keyboard: [
+                        [
+                            {
+                                text: '',
+                                callback_data: 0
+                            },
+                            {
+                                text: '',
+                                callback_data: 0
+                            }
+                        ]
+                    ]
+                };
+                break;
+        }*/
     }
     
     bot.sendMessage(chatId, html, options);
@@ -27,21 +54,63 @@ module.exports = {
         console.log(JSON.stringify(data, null, 4));
     },
 
-    getFirstName(message) {
-        return message.from.first_name;
-    },
-
-    getChatId(message) {
-        return message.chat.id;
+    dbConnecting(uri) {
+        mongoose.connect(uri, {useNewUrlParser: true})
+                 .then(() => console.log('Database is connected...'))
+                 .catch((error) => console.log(error));
+        
+        // database seeder
+        // database.films.forEach(f => new Film(f).save().catch(error => console.log(error)));
+        // database.cinemas.forEach(c => new Cinema(c).save().catch(error => console.log(error)));
     },
 
     sendFilmsByQuery(bot, chatId, query) {
-        Film.find(query).then(films => {
-            let html = films.map((f, i) => {
-                return `${i + 1}) Название: <b>"${f.name}"</b>\n    Рейтинг фильма: <b>${f.rate}</b>\n    <i>Подробнее =></i> /${f.uuid}`
+        Film.paginate(query, { limit:  2})
+            .then(result => {
+                // this.logInConsole(result)
+                if(result.docs.length) {
+                    let html = result.docs.map(f => {
+                        return `Название: <b>"${f.name}"</b>\nРейтинг фильма: <b>${f.rate}</b>\n<i>О фильме:</i> /${f.uuid}`
+                    }).join('\n\n');
+                    
+                    // this.logInConsole(html);
+                    bot.sendMessage(chatId, html, {
+                        parse_mode: 'HTML',
+                        reply_markup: {
+                            inline_keyboard: [
+                                [
+                                    {
+                                        text: 'Назад',
+                                        callback_data: JSON.stringify({
+                                            type: 'prev',
+                                            hasPrevPage: result.hasPrevPage,
+                                            prevPage: result.prevPage
+                                        })
+                                    },
+                                    {
+                                        text: 'Далее',
+                                        callback_data: JSON.stringify({
+                                            type: 'next',
+                                            hasNextPage: result.hasNextPage,
+                                            nextPage: result.nextPage
+                                        })
+                                    }
+                                ]
+                            ]
+                        }
+                    });
+                }
+            })
+            .catch(error => console.log(error));
+    },
+
+    sendCinemasByQuery(bot, userId, query) {
+        Cinema.find(query).then(cinemas => {
+            let html = cinemas.map((c, i) => {
+                return `${i + 1}) Название: <b>"${c.name}"</b>\n    <i>Подробнее =></i> /${c.uuid}`
             }).join('\n');
-    
-            sendHTML(bot, chatId, html, 'film');
+            
+            sendHTML(bot, userId, html, 'home');
         });
     },
 
@@ -52,10 +121,14 @@ module.exports = {
             });
             
             cinemas = lodash.sortBy(cinemas, 'distance');
-    
-            let html = cinemas.map((c, i) => {
-                return `${i + 1}) Название: <b>"${c.name}"</b>\n    Расстояние до кинотеатра: <b>${c.distance} км</b>\n    <i>Подробнее =></i> /${c.uuid}`
-            }).join('\n');
+            topCinemas = cinemas.slice(0, 3);
+            
+            let html = 'Спасибо за доверие 😊\nВот то, что ты хотел(а) 😉\n\n<b>Ближайшие к тебе 🎥</b>\n\n';
+            html += topCinemas.map((c, i) => {
+                return `Название: <b>"${c.name}"</b>\n` +
+                       `От тебя: ~ <b>${c.distance} км</b>\n` +
+                       `<i>О кинотеатре:</i> /${c.uuid}`
+            }).join('\n\n');
             
             sendHTML(bot, chatId, html, 'home');
         });
@@ -65,5 +138,53 @@ module.exports = {
         return source.slice(1);
     },
 
-    sendHTML: sendHTML
+    showFavouriteFilms(bot, chatId, userId) {
+        User.findOne({telegramId: userId}).then(user => {
+            if (user) {
+                Film.paginate({uuid: {$in: user.films}})
+                    .then(result => {
+                        // this.logInConsole(result);
+
+                        if(result.docs.length) {
+                            let html = result.docs.map(f => {
+                                return `Название: <b>"${f.name}"</b>\nРейтинг фильма: <b>${f.rate}</b>\n<i>О фильме:</i> /${f.uuid}`
+                            }).join('\n\n');
+                            
+                            // this.logInConsole(html);
+                            bot.sendMessage(chatId, html, {
+                                parse_mode: 'HTML'
+                            });
+                        }
+                    })
+                    .catch(error => console.log(error));
+            } else {
+                bot.sendMessage(chatId, 'Прости, но твоя коллекция избранного пуста 😞\n\nНо ты можешь её пополнить, просматривая информаию о конкретном фильме 😎 Для этого просто нажми кнопку \"Добавить в избранное\" и всё будет Окей 😉') 
+            }
+        }).catch(error => console.log(error));
+    },
+
+    toggleFavouriteFilm(bot, userId, queryId, {filmUuid, isFavourite}) {
+        User.findOne({telegramId: userId}).then(user => {
+            if (user) {
+                if(isFavourite) {
+                    user.films = user.films.filter(uuid => uuid !== filmUuid);
+                } else {
+                    user.films.push(filmUuid);
+                }
+            } else {
+                user = new User({
+                    telegramId: userId,
+                    films: [filmUuid]
+                });
+            }
+            
+            let answer = isFavourite ? 'Удалено' : 'Добавлено';
+            user.save().then(() => {
+                bot.answerCallbackQuery({
+                    callback_query_id: queryId,
+                    text: answer
+                })
+            }).catch(error => console.log(error));
+        }).catch(error => console.log(error));
+    }
 };

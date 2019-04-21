@@ -1,79 +1,89 @@
 const TelegramBot = require('node-telegram-bot-api');
-const mongoose = require('mongoose');
 const config = require('./config');
 const helper = require('./helper');
 const keyboard = require('./keyboard-layout');
 const button = require('./keyboard-button');
-const database = require('../database.json');
-const Film = require('./models').Film;
-const Cinema = require('./models').Cinema;
-const User = require('./models').User;
+
+const Film = require('./models/film');
+const Cinema = require('./models/cinema');
+const User = require('./models/user');
 
 const ACTION_TYPE = {
     TOGGLE_FAV_FILM: 'tff',
     SHOW_CINEMAS: 'sc',
     SHOW_FILMS: 'sf',
-    SHOW_CINEMAS_ON_MAP: 'scom'
+    SHOW_CINEMAS_ON_MAP: 'scom',
+    NEXT_PAGE: 'next',
+    PREV_PAGE: 'prev'
 };
-
 const bot = new TelegramBot(config.TOKEN, {polling: true});
 
 helper.logStart();
+helper.dbConnecting(config.DB_URI);
 
-mongoose.connect(config.DB_URL, {useNewUrlParser: true})
-                 .then(() => console.log('Database is connected...'))
-                 .catch((error) => console.log(error));
-
-// database.films.forEach(f => new Film(f).save().catch(error => console.log(error)));
-// database.cinemas.forEach(c => new Cinema(c).save().catch(error => console.log(error)));
 
 bot.on('message', msg => {
     switch(msg.text) {
         case button.getButton('favourite'):
-            showFavouriteFilms(helper.getChatId(msg), msg.from.id);
+            helper.showFavouriteFilms(bot, msg.chat.id, msg.from.id);
             break;
         case button.getButton('films'):
-            bot.sendMessage(helper.getChatId(msg), 'Выберите жанр', {
+            bot.sendMessage(msg.chat.id, 'Что тебя интересует? 😎👇', {
                 reply_markup: {
-                    keyboard: keyboard.getKeyboardLayout('films')
+                    keyboard: keyboard.getKeyboardLayout('films'),
+                    resize_keyboard: true
                 }
             });
             break;
         case button.getButton('comedy'):
-            helper.sendFilmsByQuery(bot, helper.getChatId(msg), {type: 'comedy'});
+            helper.sendFilmsByQuery(bot, msg.chat.id, {type: 'comedy'});
             break;
         case button.getButton('action'):
-            helper.sendFilmsByQuery(bot, helper.getChatId(msg), {type: 'action'});
+            helper.sendFilmsByQuery(bot, msg.chat.id, {type: 'action'});
             break;
-        case button.getButton('random'):
-            helper.sendFilmsByQuery(bot, helper.getChatId(msg), {});
+        case button.getButton('all'):
+            helper.sendFilmsByQuery(bot, msg.chat.id, {});
             break;
         case button.getButton('cinemas'):
-            bot.sendMessage(helper.getChatId(msg), 'Отправьте Ваше местоположение', {
+            bot.sendMessage(msg.chat.id, 'Отправь своё местоположение, если хочешь узнать о трёх ближайших к тебе кинотеатрах 😏👇', {
                 reply_markup: {
-                    keyboard: keyboard.getKeyboardLayout('cinema')
+                    keyboard: keyboard.getKeyboardLayout('cinema'),
+                    resize_keyboard: true
                 }
             });
             break;
         case button.getButton('back'):
-            bot.sendMessage(helper.getChatId(msg), 'Выберите команду для начала работы', {
+            bot.sendMessage(msg.chat.id, 'Выбери команду 😉👇', {
                 reply_markup: {
-                    keyboard: keyboard.getKeyboardLayout('home')
+                    keyboard: keyboard.getKeyboardLayout('home'),
+                    resize_keyboard: true
                 }
             });
             break;
     }
 
     if (msg.location) {
-        helper.getCinemasInCoord(bot, helper.getChatId(msg), msg.location);
+        helper.getCinemasInCoord(bot, msg.chat.id, msg.location);
     }
 });
 
 bot.onText(/\/start/, msg => {
-    let text = `Здравствуйте, ${helper.getFirstName(msg)}!\nВыберите команду для начала работы`;
-    bot.sendMessage(helper.getChatId(msg), text, {
+    let text = `Привет, ${msg.from.first_name}!\nРад тебя видеть 😊 Я помогу тебе найти ближайшие к тебе кинотеатры и покажу, что в них сейчас показывают. Выбери команду для начала работы со мной 😉👇`;
+    
+    bot.sendMessage(msg.chat.id, text, {
         reply_markup: {
-            keyboard: keyboard.getKeyboardLayout('home')
+            keyboard: keyboard.getKeyboardLayout('home'),
+            resize_keyboard: true
+        }
+    });
+});
+
+bot.onText(/\/about_project/, msg => {
+    let text = 'Этот бот задумывался как демо-проект возможностей Bot API платформы Telegram для создания небольших интерактивных геосервисных приложений на данной платформе.\n\nС вопросами и предложениями писать @xXx_777_xXx';
+    
+    bot.sendMessage(msg.chat.id, text, {
+        reply_markup: {
+            remove_keyboard: true
         }
     });
 });
@@ -98,7 +108,7 @@ bot.onText(/\/f(.+)/, (msg, [source, match]) => {
                       `Длительность: ${film.length}\n` +
                       `Страна: ${film.country}`;
 
-        bot.sendPhoto(helper.getChatId(msg), film.picture, {
+        bot.sendPhoto(msg.chat.id, film.picture, {
             caption: caption,
             reply_markup: {
                 inline_keyboard: [
@@ -129,17 +139,14 @@ bot.onText(/\/f(.+)/, (msg, [source, match]) => {
             }
         });
     });
-
-    // Film.findOne({uuid: filmUuid}).then(film => {
-        
-    // });
 });
 
 bot.onText(/\/c(.+)/, (msg, [source, match]) => {
     let cinemaUuid = helper.getItemUuid(source);
 
     Cinema.findOne({uuid: cinemaUuid}).then(cinema => {
-        bot.sendMessage(helper.getChatId(msg), `Кинотетар ${cinema.name}`, {
+        bot.sendMessage(msg.chat.id, `Кинотетар <b>"${cinema.name}"</b>`, {
+            parse_mode: 'HTML',
             reply_markup: {
                 inline_keyboard: [
                     [
@@ -175,31 +182,122 @@ bot.on('callback_query', query => {
     let data = JSON.parse(query.data);
     let { type, latitude, longitude } = data;
 
-
     switch(type) {
         case ACTION_TYPE.SHOW_CINEMAS_ON_MAP:
             bot.sendLocation(query.from.id, latitude, longitude);
             break;
         case ACTION_TYPE.SHOW_CINEMAS:
-            sendCinemasByQuery(query.from.id, {uuid: {$in: data.cinemaUuids}});
+            helper.sendCinemasByQuery(bot, query.from.id, {uuid: {$in: data.cinemaUuids}});
             break;
         case ACTION_TYPE.SHOW_FILMS:
             helper.sendFilmsByQuery(bot, query.from.id, {uuid: {$in: data.filmUuids}})
             break;
         case ACTION_TYPE.TOGGLE_FAV_FILM:
-            toggleFavouriteFilm(query.from.id, query.id, data);
+            helper.toggleFavouriteFilm(bot, query.from.id, query.id, data);
             break;
-    }
+        case ACTION_TYPE.NEXT_PAGE:
+            // helper.logInConsole(data);
+            
+            if (data.hasNextPage) {
+                Film.paginate({}, { limit: 2, page: data.nextPage})
+                    .then(result => {
+                        // helper.logInConsole(result);
+
+                        if(result.docs.length) {
+                            let html = result.docs.map(f => {
+                                return `Название: <b>"${f.name}"</b>\nРейтинг фильма: <b>${f.rate}</b>\n<i>О фильме:</i> /${f.uuid}`
+                            }).join('\n\n');
+                            
+                            // helper.logInConsole(html);
+
+                            bot.editMessageText(html, {
+                                parse_mode: 'HTML',
+                                chat_id: query.message.chat.id,
+                                message_id: query.message.message_id,
+                                reply_markup: { 
+                                    inline_keyboard: [
+                                        [
+                                            {
+                                                text: 'Назад',
+                                                callback_data: JSON.stringify({
+                                                    type: 'prev',
+                                                    hasPrevPage: result.hasPrevPage,
+                                                    prevPage: result.prevPage
+                                                })
+                                            },
+                                            {
+                                                text: 'Далее',
+                                                callback_data: JSON.stringify({
+                                                    type: 'next',
+                                                    hasNextPage: result.hasNextPage,
+                                                    nextPage: result.nextPage
+                                                })
+                                            }
+                                        ]
+                                    ]
+                                }
+                            });
+                        }
+                    });
+            }
+            break;
+        case ACTION_TYPE.PREV_PAGE:
+            // helper.logInConsole(data);
+        
+            if (data.hasPrevPage) {
+                Film.paginate({}, { limit: 2, page: data.prevPage})
+                    .then(result => {
+                        // helper.logInConsole(result);
+
+                        if(result.docs.length) {
+                            let html = result.docs.map(f => {
+                                return `Название: <b>"${f.name}"</b>\nРейтинг фильма: <b>${f.rate}</b>\n<i>О фильме:</i> /${f.uuid}`
+                            }).join('\n\n');
+                            
+                            // helper.logInConsole(html);
+
+                            bot.editMessageText(html, {
+                                parse_mode: 'HTML',
+                                chat_id: query.message.chat.id,
+                                message_id: query.message.message_id,
+                                reply_markup: { 
+                                    inline_keyboard: [
+                                        [
+                                            {
+                                                text: 'Назад',
+                                                callback_data: JSON.stringify({
+                                                    type: 'prev',
+                                                    hasPrevPage: result.hasPrevPage,
+                                                    prevPage: result.prevPage
+                                                })
+                                            },
+                                            {
+                                                text: 'Далее',
+                                                callback_data: JSON.stringify({
+                                                    type: 'next',
+                                                    hasNextPage: result.hasNextPage,
+                                                    nextPage: result.nextPage
+                                                })
+                                            }
+                                        ]
+                                    ]
+                                }
+                            });
+                        }
+                    });
+            }
+            break;
+    }   
 });
 
 bot.on('inline_query', query => {
     Film.find({}).then(films => {
         let results = films.map(f => {
             let caption = `Название: ${f.name}\n` +
-                      `Год: ${f.year}\n` +
-                      `Рейтинг: ${f.rate}\n` +
-                      `Длительность: ${f.length}\n` +
-                      `Страна: ${f.country}`;
+                          `Год: ${f.year}\n` +
+                          `Рейтинг: ${f.rate}\n` +
+                          `Длительность: ${f.length}\n` +
+                          `Страна: ${f.country}`;
 
             return {
                 id: f.uuid,
@@ -227,55 +325,3 @@ bot.on('inline_query', query => {
 });
 
 bot.on('polling_error', (error) => console.log(error));
-
-function toggleFavouriteFilm(userId, queryId, {filmUuid, isFavourite}) {
-    User.findOne({telegramId: userId}).then(user => {
-        if (user) {
-            if(isFavourite) {
-                user.films = user.films.filter(uuid => uuid !== filmUuid);
-            } else {
-                user.films.push(filmUuid);
-            }
-        } else {
-            user = new User({
-                telegramId: userId,
-                films: [filmUuid]
-            });
-        }
-        
-        let answer = isFavourite ? 'Удалено' : 'Добавлено';
-        user.save().then(() => {
-            bot.answerCallbackQuery({
-                callback_query_id: queryId,
-                text: answer
-            })
-        }).catch(error => console.log(error));
-    }).catch(error => console.log(error));
-}
-
-function showFavouriteFilms(chatId, userId) {
-    User.findOne({telegramId: userId}).then(user => {
-        if (user) {
-            Film.find({uuid: {$in: user.films}}).then(films => {
-                if(films.length) {
-                    let html = films.map((f, i) => {
-                        return `${i + 1}) Название: <b>"${f.name}"</b>\n    Рейтинг фильма: <b>${f.rate}</b>\n    <i>Подробнее =></i> /${f.uuid}`
-                    }).join('\n');
-                    helper.sendHTML(bot, chatId, html, 'home')
-                }
-            }).catch(error => console.log(error));
-        } else {
-            bot.sendMessage(chatId, 'Ваша коллекция избранного пуста =(') 
-        }
-    }).catch(error => console.log(error));
-}
-
-function sendCinemasByQuery(userId, query) {
-    Cinema.find(query).then(cinemas => {
-        let html = cinemas.map((c, i) => {
-            return `${i + 1}) Название: <b>"${c.name}"</b>\n    <i>Подробнее =></i> /${c.uuid}`
-        }).join('\n');
-        
-        helper.sendHTML(bot, userId, html, 'home');
-    });
-}

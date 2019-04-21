@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
-const Schema = mongoose.Schema;
 
+const Schema = mongoose.Schema;
 const cinemaSchema = new Schema({
     uuid: {
         type: String,
@@ -23,6 +23,4 @@ const cinemaSchema = new Schema({
     }
 });
 
-module.exports = {
-    cinemaSchema: cinemaSchema
-};
+module.exports = mongoose.model('cinemas', cinemaSchema);

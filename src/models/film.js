@@ -1,6 +1,7 @@
-const mongoose = require('mongoose');
-const Schema = mongoose.Schema;
+const mongoose = require('mongoose'),
+      mongoosePaginate = require('mongoose-paginate-v2');
 
+const Schema = mongoose.Schema;
 const filmSchema = new Schema({
     uuid: {
         type: String,
@@ -39,6 +40,5 @@ const filmSchema = new Schema({
     }
 });
 
-module.exports = {
-    filmSchema: filmSchema
-};
+filmSchema.plugin(mongoosePaginate);
+module.exports = mongoose.model('films', filmSchema);

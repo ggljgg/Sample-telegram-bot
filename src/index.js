@@ -1,4 +1,4 @@
-const TelegramBot = require('node-telegram-bot-api');
+﻿const TelegramBot = require('node-telegram-bot-api');
 const config = require('./config');
 const helper = require('./helper');
 const keyboard = require('./keyboard-layout');
@@ -131,7 +131,7 @@ bot.onText(/\/f(.+)/, (msg, [source, match]) => {
                     ],
                     [
                         {
-                            text: `Кинопоиск ${film.name}`,
+                            text: 'Найти на сайте \"КиноПоиск\"',
                             url: film.link
                         }
                     ]

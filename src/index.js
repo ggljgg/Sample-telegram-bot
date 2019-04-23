@@ -197,18 +197,12 @@ bot.on('callback_query', query => {
             helper.toggleFavouriteFilm(bot, query.from.id, query.id, data);
             break;
         case ACTION_TYPE.NEXT_PAGE:
-            // helper.logInConsole(data);
-
             Film.paginate({}, { limit: 1, page: data.nextPage})
                 .then(result => {
-                    // helper.logInConsole(result);
-
                     if(result.docs.length) {
                         let html = result.docs.map(f => {
                             return `Название: <b>"${f.name}"</b>\nРейтинг фильма: <b>${f.rate}</b>\n<i>О фильме:</i> /${f.uuid}`
                         }).join('\n\n');
-                        
-                        // helper.logInConsole(html);
 
                         if (result.hasNextPage) {
                             inline_keyboard_layout = [
@@ -217,7 +211,6 @@ bot.on('callback_query', query => {
                                         text: 'Назад',
                                         callback_data: JSON.stringify({
                                             type: ACTION_TYPE.PREV_PAGE,
-                                            // hasPrevPage: result.hasPrevPage,
                                             prevPage: result.prevPage
                                         })
                                     },
@@ -225,7 +218,6 @@ bot.on('callback_query', query => {
                                         text: 'Далее',
                                         callback_data: JSON.stringify({
                                             type: ACTION_TYPE.NEXT_PAGE,
-                                            // hasNextPage: result.hasNextPage,
                                             nextPage: result.nextPage
                                         })
                                     }
@@ -239,7 +231,6 @@ bot.on('callback_query', query => {
                                         text: 'Назад',
                                         callback_data: JSON.stringify({
                                             type: ACTION_TYPE.PREV_PAGE,
-                                            // hasPrevPage: result.hasPrevPage,
                                             prevPage: result.prevPage
                                         })
                                     }
@@ -259,18 +250,13 @@ bot.on('callback_query', query => {
                 });
             break;
         case ACTION_TYPE.PREV_PAGE:
-            // helper.logInConsole(data);
-            
             Film.paginate({}, { limit: 1, page: data.prevPage})
                 .then(result => {
-                    // helper.logInConsole(result);
 
                     if(result.docs.length) {
                         let html = result.docs.map(f => {
                             return `Название: <b>"${f.name}"</b>\nРейтинг фильма: <b>${f.rate}</b>\n<i>О фильме:</i> /${f.uuid}`
                         }).join('\n\n');
-                        
-                        // helper.logInConsole(html);
 
                         if (result.hasPrevPage) {
                             inline_keyboard_layout = [
@@ -279,7 +265,6 @@ bot.on('callback_query', query => {
                                         text: 'Назад',
                                         callback_data: JSON.stringify({
                                             type: ACTION_TYPE.PREV_PAGE,
-                                            // hasPrevPage: result.hasPrevPage,
                                             prevPage: result.prevPage
                                         })
                                     },
@@ -287,7 +272,6 @@ bot.on('callback_query', query => {
                                         text: 'Далее',
                                         callback_data: JSON.stringify({
                                             type: ACTION_TYPE.NEXT_PAGE,
-                                            // hasNextPage: result.hasNextPage,
                                             nextPage: result.nextPage
                                         })
                                     }
@@ -301,7 +285,6 @@ bot.on('callback_query', query => {
                                         text: 'Далее',
                                         callback_data: JSON.stringify({
                                             type: ACTION_TYPE.NEXT_PAGE,
-                                            // hasNextPage: result.hasNextPage,
                                             nextPage: result.nextPage
                                         })
                                     }

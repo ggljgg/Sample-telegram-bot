@@ -7,7 +7,7 @@ const User = require('./models/user');
 const geolib = require('geolib');
 const lodash = require('lodash');
 
-function sendHTML(bot, chatId, html, /*keyboardType='keyboard',*/ keyboardLayout=null) {
+function sendHTML(bot, chatId, html, keyboardLayout=null) {
     let options = {
         parse_mode: 'HTML'
     };
@@ -15,31 +15,8 @@ function sendHTML(bot, chatId, html, /*keyboardType='keyboard',*/ keyboardLayout
     if (keyboardLayout) {
         options['reply_markup'] = {
             keyboard: keyboard.getKeyboardLayout(keyboardLayout),
-            resize_keyboard: true   // поставил зашлушку, потому что где-то в процессе кнопки увеличились
+            resize_keyboard: true   // поставил зашлушку, потому что где-то в процессе кнопки не увеличились
         };
-        /*switch(keyboardType) {
-            case 'keyboard':
-                options['reply_markup'] = {
-                    keyboard: keyboard.getKeyboardLayout(keyboardLayout)
-                };
-                break;
-            case 'inline_keyboard':
-                options['reply_markup'] = {
-                    inline_keyboard: [
-                        [
-                            {
-                                text: '',
-                                callback_data: 0
-                            },
-                            {
-                                text: '',
-                                callback_data: 0
-                            }
-                        ]
-                    ]
-                };
-                break;
-        }*/
     }
     
     bot.sendMessage(chatId, html, options);
@@ -67,26 +44,17 @@ module.exports = {
     sendFilmsByQuery(bot, chatId, query) {
         Film.paginate(query, { limit:  1})
             .then(result => {
-                // this.logInConsole(result)
+                
                 if(result.docs.length) {
                     let html = result.docs.map(f => {
                         return `Название: <b>"${f.name}"</b>\nРейтинг фильма: <b>${f.rate}</b>\n<i>О фильме:</i> /${f.uuid}`
                     }).join('\n\n');
                     
-                    // this.logInConsole(html);
                     bot.sendMessage(chatId, html, {
                         parse_mode: 'HTML',
                         reply_markup: {
                             inline_keyboard: [
                                 [
-                                    // {
-                                    //     text: 'Назад',
-                                    //     callback_data: JSON.stringify({
-                                    //         type: 'prev',
-                                    //         hasPrevPage: result.hasPrevPage,
-                                    //         prevPage: result.prevPage
-                                    //     })
-                                    // },
                                     {
                                         text: 'Далее',
                                         callback_data: JSON.stringify({
@@ -143,14 +111,12 @@ module.exports = {
             if (user && user.films.length !== 0) {
                 Film.paginate({uuid: {$in: user.films}})
                     .then(result => {
-                        // this.logInConsole(result);
 
                         if(result.docs.length) {
                             let html = result.docs.map(f => {
                                 return `Название: <b>"${f.name}"</b>\nРейтинг фильма: <b>${f.rate}</b>\n<i>О фильме:</i> /${f.uuid}`
                             }).join('\n\n');
                             
-                            // this.logInConsole(html);
                             bot.sendMessage(chatId, html, {
                                 parse_mode: 'HTML'
                             });

@@ -140,7 +140,7 @@ module.exports = {
 
     showFavouriteFilms(bot, chatId, userId) {
         User.findOne({telegramId: userId}).then(user => {
-            if (user) {
+            if (user && user.films.length !== 0) {
                 Film.paginate({uuid: {$in: user.films}})
                     .then(result => {
                         // this.logInConsole(result);

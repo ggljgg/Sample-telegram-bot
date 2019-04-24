@@ -1,5 +1,6 @@
-module.exports = {
-    getButton(button) {
+'use strict';
+class Button {
+    static getButton(button) {
         switch(button) {
             case 'films':
                 return '🎬 Сейчас в кино';
@@ -21,9 +22,9 @@ module.exports = {
             case 'back':
                 return '⬅️ Назад';
         }
-    },
+    }
 
-    getInlineButton(button, text, options) {
+    static getInlineButton(button, text, options) {
         switch(button) {
             case 'url':
                 return {
@@ -38,3 +39,5 @@ module.exports = {
         }
     }
 }
+
+module.exports = Button;

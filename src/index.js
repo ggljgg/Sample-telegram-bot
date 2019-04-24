@@ -1,8 +1,8 @@
 ﻿const TelegramBot = require('node-telegram-bot-api'),
       config = require('./config'),
       DatabaseService = require('./database-service'),
-      helper = require('./helper'),
-      keyboard = require('./keyboard-layout'),
+      Helper = require('./helper'),
+      Keyboard = require('./keyboard-layout'),
       Button = require('./keyboard-button'),
       Action = require('./actions'),
       Film = require('./models/film'),
@@ -15,29 +15,29 @@ DatabaseService.connectDatabase();
 bot.on('message', msg => {
     switch(msg.text) {
         case Button.getButton('favourite'):
-            helper.showFavouriteFilms(bot, msg.chat.id, msg.from.id);
+            Helper.showFavouriteFilms(bot, msg.chat.id, msg.from.id);
             break;
         case Button.getButton('films'):
             bot.sendMessage(msg.chat.id, 'Что тебя интересует? 😎👇', {
                 reply_markup: {
-                    keyboard: keyboard.getKeyboardLayout('films'),
+                    keyboard: Keyboard.getKeyboardLayout('films'),
                     resize_keyboard: true
                 }
             });
             break;
         case Button.getButton('comedy'):
-            helper.sendFilmsByQuery(bot, msg.chat.id, {type: 'comedy'});
+            Helper.sendFilmsByQuery(bot, msg.chat.id, {type: 'comedy'});
             break;
         case Button.getButton('action'):
-            helper.sendFilmsByQuery(bot, msg.chat.id, {type: 'action'});
+            Helper.sendFilmsByQuery(bot, msg.chat.id, {type: 'action'});
             break;
         case Button.getButton('all'):
-            helper.sendFilmsByQuery(bot, msg.chat.id, {});
+            Helper.sendFilmsByQuery(bot, msg.chat.id, {});
             break;
         case Button.getButton('cinemas'):
             bot.sendMessage(msg.chat.id, 'Отправь своё местоположение, если хочешь узнать о трёх ближайших к тебе кинотеатрах 😏👇', {
                 reply_markup: {
-                    keyboard: keyboard.getKeyboardLayout('cinema'),
+                    keyboard: Keyboard.getKeyboardLayout('cinema'),
                     resize_keyboard: true
                 }
             });
@@ -45,7 +45,7 @@ bot.on('message', msg => {
         case Button.getButton('back'):
             bot.sendMessage(msg.chat.id, 'Выбери команду 😉👇', {
                 reply_markup: {
-                    keyboard: keyboard.getKeyboardLayout('home'),
+                    keyboard: Keyboard.getKeyboardLayout('home'),
                     resize_keyboard: true
                 }
             });
@@ -53,7 +53,7 @@ bot.on('message', msg => {
     }
 
     if (msg.location) {
-        helper.getCinemasInCoord(bot, msg.chat.id, msg.location);
+        Helper.getCinemasInCoord(bot, msg.chat.id, msg.location);
     }
 });
 
@@ -62,7 +62,7 @@ bot.onText(/\/start/, msg => {
     
     bot.sendMessage(msg.chat.id, text, {
         reply_markup: {
-            keyboard: keyboard.getKeyboardLayout('home'),
+            keyboard: Keyboard.getKeyboardLayout('home'),
             resize_keyboard: true
         }
     });
@@ -79,7 +79,7 @@ bot.onText(/\/about_project/, msg => {
 });
 
 bot.onText(/\/f(.+)/, (msg, [source, match]) => {
-    let filmUuid = helper.getItemUuid(source);
+    let filmUuid = Helper.getItemUuid(source);
 
     Promise.all([
                 Film.findOne({uuid: filmUuid}),
@@ -95,7 +95,7 @@ bot.onText(/\/f(.+)/, (msg, [source, match]) => {
                 let btnText = isFavourite ? 'Удалить из избранного' : 'Добавить в избранное';
 
                 bot.sendPhoto(msg.chat.id, film.picture, {
-                    caption: helper.generateFilmCaption(film),
+                    caption: Helper.generateFilmCaption(film),
                     reply_markup: {
                         inline_keyboard: [
                             [
@@ -126,7 +126,7 @@ bot.onText(/\/f(.+)/, (msg, [source, match]) => {
 });
 
 bot.onText(/\/c(.+)/, (msg, [source, match]) => {
-    let cinemaUuid = helper.getItemUuid(source);
+    let cinemaUuid = Helper.getItemUuid(source);
 
     Cinema.findOne({uuid: cinemaUuid})
           .then(cinema => {
@@ -171,19 +171,19 @@ bot.on('callback_query', query => {
             bot.sendLocation(query.from.id, latitude, longitude);
             break;
         case Action.ACTION_TYPES.SHOW_CINEMAS:
-            helper.sendCinemasByQuery(bot, query.from.id, {uuid: {$in: data.cinemaUuids}});
+            Helper.sendCinemasByQuery(bot, query.from.id, {uuid: {$in: data.cinemaUuids}});
             break;
         case Action.ACTION_TYPES.SHOW_FILMS:
-            helper.sendFilmsByQuery(bot, query.from.id, {uuid: {$in: data.filmUuids}})
+            Helper.sendFilmsByQuery(bot, query.from.id, {uuid: {$in: data.filmUuids}})
             break;
         case Action.ACTION_TYPES.TOGGLE_FAV_FILM:
-            helper.toggleFavouriteFilm(bot, query.from.id, query.id, data);
+            Helper.toggleFavouriteFilm(bot, query.from.id, query.id, data);
             break;
         case Action.ACTION_TYPES.NEXT_PAGE:
             Film.paginate(data.query, { limit: 1, page: data.nextPage})
                 .then(result => {
                     if(result.docs.length) {
-                        let html = result.docs.map(helper.generateFilmHTML)
+                        let html = result.docs.map(Helper.generateFilmHTML)
                                               .join('\n\n');
 
                         if (result.hasNextPage) {
@@ -235,7 +235,7 @@ bot.on('callback_query', query => {
             Film.paginate(data.query, { limit: 1, page: data.prevPage})
                 .then(result => {
                     if(result.docs.length) {
-                        let html = result.docs.map(helper.generateFilmHTML)
+                        let html = result.docs.map(Helper.generateFilmHTML)
                                               .join('\n\n');
 
                         if (result.hasPrevPage) {
@@ -288,7 +288,7 @@ bot.on('callback_query', query => {
 
 bot.on('inline_query', query => {
     Film.find({}).then(films => {
-        let results = films.map(helper.generateInlineFilm);
+        let results = films.map(Helper.generateInlineFilm);
         
         bot.answerInlineQuery(query.id, results, {
             cache_time: 0

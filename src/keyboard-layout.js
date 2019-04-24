@@ -1,7 +1,7 @@
 const Button = require('./keyboard-button');
 
-module.exports = {
-    getKeyboardLayout(keyboardType) {  
+class Keyboard {
+    static getKeyboardLayout(keyboardType) {  
         switch(keyboardType) {
             case 'home':
                 return [
@@ -21,4 +21,6 @@ module.exports = {
                 ];
         }
     }
-};
+}
+
+module.exports = Keyboard;

@@ -1,13 +1,17 @@
+'use strict';
+
 const config = require('./config'),
       database = require('../database.json'),
       mongoose = require('mongoose'),
       Film = require('./models/film'),
       Cinema = require('./models/cinema');
 
-function connectDatabase(uri=config.DB_URI) {
-    mongoose.connect(uri, {useNewUrlParser: true})
-            .then(() => console.log('Соединение с базой данных успешно установлено.'))
-            .catch((error) => console.log(error));
+class DatabaseService {
+    static connectDatabase(uri=config.DB_URI) {
+        mongoose.connect(uri, {useNewUrlParser: true})
+                .then(() => console.log('Соединение с базой данных успешно установлено.'))
+                .catch((error) => console.log(error));
+    }
 }
 
 function seedDatabase() {
@@ -35,6 +39,5 @@ mongoose.connection.on('connected', () => {
         }
     });
 })
-module.exports = {
-    connectDatabase: connectDatabase
-}
+
+module.exports = DatabaseService;

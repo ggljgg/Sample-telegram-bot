@@ -7,6 +7,4 @@ const ACTION_TYPES = Object.freeze({
     PREV_PAGE: 'prev'
 });
 
-module.exports = {
-    ACTION_TYPES: ACTION_TYPES
-}
+module.exports = ACTION_TYPES;

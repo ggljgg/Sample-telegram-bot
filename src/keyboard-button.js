@@ -21,5 +21,20 @@ module.exports = {
             case 'back':
                 return '⬅️ Назад';
         }
+    },
+
+    getInlineButton(button, text, options) {
+        switch(button) {
+            case 'url':
+                return {
+                    text: text,
+                    url: options
+                };
+            case 'callback_data':
+                return { 
+                    text: text,
+                    callback_data: options
+                };
+        }
     }
 }

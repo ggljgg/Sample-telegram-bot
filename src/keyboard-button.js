@@ -1,13 +1,14 @@
 'use strict';
+
 class Button {
-    static getButton(button) {
-        switch(button) {
+    static getButton(buttonType) {
+        switch(buttonType) {
             case 'films':
-                return '🎬 Сейчас в кино';
+                return '���� Сейчас в кино';
             case 'favourite':
-                return '🌟 Избранное'
+                return '���� Избранное'
             case 'cinemas':
-                return '🎥 Кинотеатры';
+                return '���� Кинотеатры';
             case 'all':
                 return 'Все жанры';
             case 'action':
@@ -16,7 +17,7 @@ class Button {
                 return 'Комедия';
             case 'location':
                 return {
-                    text: '🌐 Отправить местоположение',
+                    text: '���� Отправить местоположение',
                     request_location: true
                 };
             case 'back':
@@ -24,8 +25,8 @@ class Button {
         }
     }
 
-    static getInlineButton(button, text, options) {
-        switch(button) {
+    static getInlineButton(buttonType, text, options) {
+        switch(buttonType) {
             case 'url':
                 return {
                     text: text,

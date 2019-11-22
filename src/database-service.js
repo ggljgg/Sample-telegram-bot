@@ -39,4 +39,5 @@ mongoose.connection.on('connected', () => {
         }
     });
 })
+
 module.exports = DatabaseService;

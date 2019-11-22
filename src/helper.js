@@ -3,6 +3,7 @@
 const Keyboard = require('./keyboard-layout'),
       Button = require('./keyboard-button'),
       Action = require('./actions'),
+      HtmlGenerator = require('./html-generator'),
       Film = require('./models/film'),
       Cinema = require('./models/cinema'),
       User = require('./models/user'),
@@ -24,7 +25,8 @@ class Helper {
             type: 'photo',
             photo_url: film.picture,
             thumb_url: film.picture,
-            caption: generateFilmCaption(film),
+            caption: this.generateFilmCaption(film),
+
             reply_markup: {
                 inline_keyboard: [
                     [
@@ -36,24 +38,7 @@ class Helper {
             }
         };
     }
-    
-    static generateFilmHTML(film) {
-        return `Название: <b>"${film.name}"</b>\n` +
-               `Рейтинг фильма: <b>${film.rate}</b>\n` +
-               `<i>О фильме:</i> /${film.uuid}`;
-    }
-    
-    static generateCinemaHTML(cinema) {
-        return `Название: <b>"${cinema.name}"</b>\n` +
-               `<i>О кинотеатре:</i> /${cinema.uuid}`
-    }
-    
-    static generateCinemaInCoordHTML(cinema) {
-        return `Название: <b>"${cinema.name}"</b>\n` +
-                `От тебя: ~ <b>${cinema.distance} км</b>\n` +
-                `<i>О кинотеатре:</i> /${cinema.uuid}`
-    }
-    
+
     static sendHTML(bot, chatId, html, keyboardLayout=null) {
         let options = {
             parse_mode: 'HTML'
@@ -77,7 +62,7 @@ class Helper {
         Film.paginate(query, { limit:  1})
             .then(result => {
                 if(result.docs.length) {
-                    let html = result.docs.map(this.generateFilmHTML)
+                    let html = result.docs.map(HtmlGenerator.generateFilmHTML)
                                           .join('\n\n');
                     
                     bot.sendMessage(chatId, html, {
@@ -87,9 +72,9 @@ class Helper {
                                 [Button.getInlineButton('callback_data',
                                                         'Далее', 
                                                         JSON.stringify({
-                                                            type: Action.ACTION_TYPES.NEXT_PAGE,
+                                                            type: Action.NEXT_PAGE,
                                                             nextPage: result.nextPage,
-                                                            query: query     
+                                                            // query: query     // некоторые занимают больше 64 байта, но для корректной работы необходимо передавать этот запрос (мб, через файл)     
                                                         }))]
                             ]
                         }
@@ -102,7 +87,7 @@ class Helper {
     static sendCinemasByQuery(bot, userId, query) {
         Cinema.find(query)
               .then(cinemas => {
-                  let html = cinemas.map(this.generateCinemaHTML)
+                  let html = cinemas.map(HtmlGenerator.generateCinemaHTML)
                                     .join('\n\n');
                   
                   this.sendHTML(bot, userId, html, 'home');
@@ -121,8 +106,8 @@ class Helper {
                   cinemas = lodash.sortBy(cinemas, 'distance');
                   let topCinemas = cinemas.slice(0, 3);
                   
-                  let html = 'Спасибо за доверие 😊\nВот то, что ты хотел(а) 😉\n\n<b>Ближайшие к тебе 🎥</b>\n\n';
-                  html += topCinemas.map(this.generateCinemaInCoordHTML)
+                  let html = 'Спасибо за доверие ����\nВот то, что ты хотел(а) ����\n\n<b>Ближайшие к тебе ����</b>\n\n';
+                  html += topCinemas.map(HtmlGenerator.generateCinemaInCoordHTML)
                                     .join('\n\n');
                   
                   this.sendHTML(bot, chatId, html, 'home');
@@ -137,7 +122,7 @@ class Helper {
                     Film.paginate({uuid: {$in: user.films}})
                         .then(result => {
                             if(result.docs.length) {
-                                let html = result.docs.map(this.generateFilmHTML)
+                                let html = result.docs.map(HtmlGenerator.generateFilmHTML)
                                                       .join('\n\n');
                                 
                                 this.sendHTML(bot, chatId, html);
@@ -145,7 +130,7 @@ class Helper {
                         })
                         .catch(error => console.log(error));
                 } else {
-                    bot.sendMessage(chatId, 'Прости, но твоя коллекция избранного пуста 😞\n\nНо ты можешь её пополнить, просматривая информаию о конкретном фильме 😎 Для этого просто нажми кнопку \"Добавить в избранное\" и всё будет Окей 😉') 
+                    bot.sendMessage(chatId, 'Прости, но твоя коллекция избранного пуста ����\n\nНо ты можешь её пополнить, просматривая информаию о конкретном фильме ���� Для этого просто нажми кнопку \"Добавить в избранное\" и всё будет Окей ����') 
                 }
             })
             .catch(error => console.log(error));
